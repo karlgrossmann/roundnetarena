@@ -1,0 +1,144 @@
+name: CI
+
+# Deployments run from this workflow only — automatic Git deployments are turned
+# off in vercel.json. Nothing reaches production without a green run.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  quality:
+    name: Lint, types and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # src/paraglide is generated and not versioned — every job compiles it
+      # before anything reads the messages.
+      - run: pnpm i18n:compile
+
+      - run: pnpm lint
+
+      - name: Check formatting
+        run: pnpm check
+
+      - run: pnpm typecheck
+
+      # The build is the only place that exercises the Nitro output and the
+      # glpk.js wasm tracing before a deployment does.
+      - run: pnpm build
+
+  test:
+    name: Tests against a throwaway database
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine # same major version as docker-compose.yml
+        env:
+          POSTGRES_DB: roundnet
+          POSTGRES_USER: roundnet
+          POSTGRES_PASSWORD: roundnet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U roundnet -d roundnet"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      # Without this the integration suites skip themselves silently.
+      DATABASE_URL: postgres://roundnet:roundnet@localhost:5432/roundnet
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm i18n:compile
+
+      # Runs against an empty database, so the migration chain is verified too.
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - run: pnpm test
+
+  migrate-production:
+    name: Migrate production database
+    needs: [quality, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Session-mode connection (port 5432 on the Supabase pooler host):
+      # migrations need a session, and GitHub runners have no IPv6 for the
+      # direct connection.
+      - name: Apply migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+  deploy:
+    name: Deploy to Vercel
+    needs: [migrate-production]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Pull Vercel environment
+        run: pnpm dlx vercel@latest pull --yes --environment=production --token=$VERCEL_TOKEN
+
+      - name: Build
+        run: pnpm dlx vercel@latest build --prod --token=$VERCEL_TOKEN
+
+      - name: Deploy
+        run: pnpm dlx vercel@latest deploy --prebuilt --prod --token=$VERCEL_TOKEN

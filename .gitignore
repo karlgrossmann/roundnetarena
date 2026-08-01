@@ -1,0 +1,27 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.env*
+.docs
+!.env.example
+.tanstack
+.wrangler
+.output
+.vercel
+.vinxi
+__unconfig*
+todos.json
+
+# typescript
+*.tsbuildinfo
+
+# storybook
+storybook-static
+
+# React Email
+.react-email
+
+# Claude
+.claude

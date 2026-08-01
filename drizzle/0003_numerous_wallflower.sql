@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "player_active_name_uq" ON "player" USING btree ("league_id",lower(regexp_replace(btrim("first_name"), '[[:space:]]+', ' ', 'g')),lower(regexp_replace(btrim("last_name"), '[[:space:]]+', ' ', 'g'))) WHERE not "player"."marked_as_deleted";
