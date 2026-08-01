@@ -96,7 +96,7 @@ jobs:
   migrate-production:
     name: Migrate production database
     needs: [quality, test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -122,7 +122,7 @@ jobs:
   deploy:
     name: Deploy to Vercel
     needs: [migrate-production]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -138,19 +138,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-
-      # Diagnosing "Could not retrieve Project Settings" — that message covers
-      # both a token without access and an id that does not match it. Prints
-      # lengths only; GitHub masks the values themselves.
-      - name: Check Vercel credentials
-        run: |
-          printf 'token length: %s\n' "${#VERCEL_TOKEN}"
-          case "$VERCEL_TOKEN" in
-            *[[:space:]]*) echo "token contains whitespace — likely a copy-paste artefact" ;;
-            *) echo "token has no surrounding whitespace" ;;
-          esac
-          printf 'org id length: %s, project id length: %s\n' "${#VERCEL_ORG_ID}" "${#VERCEL_PROJECT_ID}"
-          pnpm dlx vercel@latest whoami --token="$VERCEL_TOKEN"
 
       - name: Pull Vercel environment
         run: pnpm dlx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
