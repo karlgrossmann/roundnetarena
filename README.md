@@ -272,9 +272,14 @@ Serverless functions scale out, so `DATABASE_URL` points at Supabase's transacti
 pooler (port 6543) and each pool stays small (`src/server/db/pool-options.ts`).
 
 **GitHub secrets** in the `production` environment: `VERCEL_TOKEN`,
-`VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and `PRODUCTION_DATABASE_URL` — the latter a
-session-mode connection (port 5432 on the pooler host), because migrations need a
-session and GitHub runners have no IPv6 for the direct connection.
+`VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `PRODUCTION_DATABASE_URL`,
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
+`PRODUCTION_DATABASE_URL` is a session-mode connection (port 5432 on the pooler
+host), because migrations need a session and GitHub runners have no IPv6 for the
+direct connection. The two `VITE_*` values belong here rather than in Vercel:
+Vite inlines them into the client bundle while the workflow builds, and Vercel
+only ever receives the finished artefact. Without them the club logo upload fails
+in the browser before it reaches Supabase Storage.
 
 ## Contributing
 

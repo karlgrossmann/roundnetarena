@@ -154,8 +154,14 @@ jobs:
       # phase ahead of `handle: filesystem` and routes everything to a /404.html
       # that this build never produces, so every URL answers 404. Nitro's own
       # vercel preset writes the correct Build Output API config.
+      # `import.meta.env.VITE_*` is inlined here, not on Vercel — the deploy
+      # uploads a finished artefact. Without these two the club logo upload
+      # fails in the browser before it ever reaches Supabase Storage.
       - name: Build deployment output
         run: pnpm build:deployment
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Deploy
         run: pnpm dlx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
