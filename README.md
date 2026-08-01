@@ -139,8 +139,9 @@ only change when a round is committed.
 
 ## Getting started
 
-**Prerequisites:** Node.js 22+, [pnpm](https://pnpm.io/installation), and Docker
-(for the local PostgreSQL).
+**Prerequisites:** Node.js 24+, [pnpm](https://pnpm.io/installation), and Docker
+(for the local PostgreSQL). Node 24 is what CI and Vercel run — on Node 22 one
+test fails, because undici behaves differently there.
 
 ```bash
 git clone https://github.com/your-org/roundnet-arena.git
