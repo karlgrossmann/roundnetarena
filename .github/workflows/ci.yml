@@ -46,9 +46,11 @@ jobs:
 
       - run: pnpm typecheck
 
-      # The build is the only place that exercises the Nitro output and the
-      # glpk.js wasm tracing before a deployment does.
-      - run: pnpm build
+      # Builds what the deploy job uploads and inspects it: routing phases in
+      # config.json, routes pointing at files that exist, glpk.wasm inside the
+      # function. None of that is covered by the test suite.
+      - name: Build and check the deployment output
+        run: pnpm build:deployment
 
   test:
     name: Tests against a throwaway database
@@ -139,11 +141,21 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm i18n:compile
+
+      # Links the checkout to the project so `deploy` knows where to upload.
       - name: Pull Vercel environment
         run: pnpm dlx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
 
-      - name: Build
-        run: pnpm dlx vercel@latest build --prod --token="$VERCEL_TOKEN"
+      # Deliberately not `vercel build`: the CLI detects TanStack Start from the
+      # dependencies and rewrites Nitro's config.json — it puts a `handle: error`
+      # phase ahead of `handle: filesystem` and routes everything to a /404.html
+      # that this build never produces, so every URL answers 404. Nitro's own
+      # vercel preset writes the correct Build Output API config.
+      - name: Build deployment output
+        run: pnpm build:deployment
 
       - name: Deploy
         run: pnpm dlx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"

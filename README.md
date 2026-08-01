@@ -251,13 +251,17 @@ production.
 
 | Job                  | When                | What it does                                                              |
 | -------------------- | ------------------- | ------------------------------------------------------------------------- |
-| `quality`            | every PR and push   | `i18n:compile`, `lint`, `check`, `typecheck`, `build`                     |
+| `quality`            | every PR and push   | `i18n:compile`, `lint`, `check`, `typecheck`, `build:deployment`          |
 | `test`               | every PR and push   | starts a throwaway PostgreSQL, applies all migrations, runs the full suite |
 | `migrate-production` | push to `main` only | `drizzle-kit migrate` against the production database                     |
-| `deploy`             | push to `main` only | `vercel build --prod` and `vercel deploy --prebuilt --prod`               |
+| `deploy`             | push to `main` only | `pnpm build:deployment` and `vercel deploy --prebuilt --prod`             |
 
 `quality` and `test` run in parallel; the production jobs only start once both are
-green. Because the test job provides `DATABASE_URL`, the integration suites really
+green. The deployment artefact comes from `pnpm build:deployment` (Nitro's `vercel`
+preset) rather than `vercel build`: the CLI recognises TanStack Start from the
+dependencies and rewrites Nitro's `config.json` into a routing table that answers
+404 on every URL. `scripts/check-deployment-output.mjs` inspects the artefact for
+exactly that, so the build fails instead of the site. Because the test job provides `DATABASE_URL`, the integration suites really
 run there instead of skipping themselves — against an empty database, which
 verifies the migration chain in `drizzle/` along the way.
 

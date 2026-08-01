@@ -19,6 +19,7 @@
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
     "ci:verify": "pnpm i18n:compile && pnpm lint && pnpm check && pnpm typecheck",
+    "build:deployment": "NITRO_PRESET=vercel vite build && node scripts/check-deployment-output.mjs",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx}\"",
     "check": "prettier --check \"**/*.{ts,tsx,js,jsx}\"",

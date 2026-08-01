@@ -61,10 +61,15 @@ are off in `vercel.json`. A push to `main` first runs lint, typecheck, build and
 full test suite against a throwaway PostgreSQL, then migrates the production
 database, and only then deploys. The README documents the environment variables.
 
-Two things about the build are easy to break:
+Three things about the build are easy to break:
 
 - **Nitro produces the server output** (`nitro()` in `vite.config.ts`). Under Vitest
   the plugin is skipped — it has no job there and keeps the Vite server alive.
+- **Never build with `vercel build`.** The CLI recognises TanStack Start from the
+  dependencies and rewrites Nitro's `config.json`: it places a `handle: error`
+  phase ahead of `handle: filesystem` and routes everything to a `/404.html` that
+  this build never produces — every URL answers 404. The deployment artefact comes
+  from `pnpm build:deployment`, and `scripts/check-deployment-output.mjs` checks it.
 - **`glpk.js` stays external** (`ssr.external` plus `traceDeps`). It resolves
   `glpk.wasm` relative to its own file, so bundled into a chunk matchmaking dies at
   runtime with `ENOENT` — a failure no test catches, because tests don't use the
