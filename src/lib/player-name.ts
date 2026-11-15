@@ -11,6 +11,10 @@ export type CreatePlayerResult =
   | { status: "created"; player: Player }
   | { status: "conflict"; error: PlayerNameConflict }
 
+export type UpdatePlayerResult =
+  | { status: "updated"; player: Player }
+  | { status: "conflict"; error: PlayerNameConflict }
+
 /**
  * Brings a name into its visible, persisted form. Casing is kept for display; the
  * case-insensitive comparison is additionally guaranteed by PostgreSQL, whose unique
@@ -20,9 +24,10 @@ export function normalizePlayerNamePart(value: string): string {
   return value.trim().replace(/\s+/gu, " ")
 }
 
-export function playerNameConflict(
-  existingPlayerId: PlayerId
-): CreatePlayerResult {
+export function playerNameConflict(existingPlayerId: PlayerId): {
+  status: "conflict"
+  error: PlayerNameConflict
+} {
   return {
     status: "conflict",
     error: {

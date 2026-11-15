@@ -1,4 +1,4 @@
-import type { CreatePlayerResult } from "../player-name"
+import type { CreatePlayerResult, UpdatePlayerResult } from "../player-name"
 import type { PlayerRemoval } from "../player-removal"
 import type { LeagueRef } from "./queries"
 import {
@@ -19,6 +19,7 @@ import type { OrganizationBrandColor } from "../organization-brand"
 import {
   createPlayer as createPlayerOnServer,
   deletePlayer as deletePlayerOnServer,
+  updatePlayer as updatePlayerOnServer,
 } from "@/server/functions/players"
 import { savePool as savePoolOnServer } from "@/server/functions/pool"
 import {
@@ -73,6 +74,24 @@ export function createPlayer(
 ): Promise<CreatePlayerResult> {
   return createPlayerOnServer({
     data: { ...league, ...input },
+  })
+}
+
+/** `rating` and `rd` are left out when unchanged. */
+export interface UpdatePlayerInput {
+  firstName: string
+  lastName: string
+  rating?: number
+  rd?: number
+}
+
+export function updatePlayer(
+  league: LeagueRef,
+  playerId: PlayerId,
+  input: UpdatePlayerInput
+): Promise<UpdatePlayerResult> {
+  return updatePlayerOnServer({
+    data: { ...league, playerId, ...input },
   })
 }
 

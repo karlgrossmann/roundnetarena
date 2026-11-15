@@ -41,6 +41,7 @@ import {
   Moon02Icon,
   MoreHorizontalIcon,
   PauseIcon,
+  PencilEdit02Icon,
   PlusSignIcon,
   Search01Icon,
   Settings02Icon,
@@ -138,6 +139,7 @@ export const IconMinus = createIcon(MinusSignIcon, "IconMinus")
 export const IconCheck = createIcon(Tick02Icon, "IconCheck")
 export const IconX = createIcon(Cancel01Icon, "IconX")
 export const IconTrash = createIcon(Delete02Icon, "IconTrash")
+export const IconPencil = createIcon(PencilEdit02Icon, "IconPencil")
 export const IconCopy = createIcon(Copy01Icon, "IconCopy")
 export const IconSearch = createIcon(Search01Icon, "IconSearch")
 export const IconSettings = createIcon(Settings02Icon, "IconSettings")

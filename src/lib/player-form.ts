@@ -3,7 +3,7 @@
  * this is a system boundary, and because a rule that silently gives way goes unnoticed.
  */
 
-import type { CreatePlayerInput } from "./api/mutations"
+import type { CreatePlayerInput, UpdatePlayerInput } from "./api/mutations"
 import { domainIssue } from "./domain-errors"
 import type { DomainIssue } from "./domain-errors"
 import {
@@ -13,6 +13,7 @@ import {
   INITIAL_RD_MIN,
   parseLocalizedNumber,
 } from "./rating-defaults"
+import type { Player } from "./types"
 
 /** Raw form values — numbers are still text at this point. */
 export interface NewPlayerDraft {
@@ -67,5 +68,53 @@ export function toCreatePlayerInput(draft: NewPlayerDraft): CreatePlayerInput {
     lastName: draft.lastName.trim(),
     rating: Number(draft.rating.trim().replace(",", ".")),
     rd: Number(draft.rd.trim().replace(",", ".")),
+  }
+}
+
+/** The edit form starts from the player as they are now. */
+export function draftFromPlayer(player: Player): NewPlayerDraft {
+  return {
+    firstName: player.firstName,
+    lastName: player.lastName,
+    rating: String(player.rating),
+    rd: String(Math.round(player.rd)),
+  }
+}
+
+function changed(
+  draft: NewPlayerDraft,
+  original: NewPlayerDraft,
+  field: "rating" | "rd"
+): boolean {
+  return draft[field].trim() !== original[field]
+}
+
+/**
+ * Untouched numbers are not checked: after many games the RD may have dropped below
+ * what a manager can enter, and a rename must not fail on it.
+ */
+export function validatePlayerEdit(
+  draft: NewPlayerDraft,
+  original: NewPlayerDraft
+): NewPlayerErrors {
+  const { rating, rd, ...names } = validateNewPlayer(draft)
+  return {
+    ...names,
+    ...(rating && changed(draft, original, "rating") ? { rating } : {}),
+    ...(rd && changed(draft, original, "rd") ? { rd } : {}),
+  }
+}
+
+/** Only changed numbers are sent — each one writes a rating correction. */
+export function toUpdatePlayerInput(
+  draft: NewPlayerDraft,
+  original: NewPlayerDraft
+): UpdatePlayerInput {
+  const { firstName, lastName, rating, rd } = toCreatePlayerInput(draft)
+  return {
+    firstName,
+    lastName,
+    ...(changed(draft, original, "rating") ? { rating } : {}),
+    ...(changed(draft, original, "rd") ? { rd } : {}),
   }
 }

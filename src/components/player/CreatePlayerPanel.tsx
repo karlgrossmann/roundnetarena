@@ -1,8 +1,8 @@
 import { useId, useState } from "react"
 import type { FormEvent } from "react"
 import { IconChevronDown } from "@/components/icons"
-import { Link } from "@tanstack/react-router"
 
+import { PlayerNameConflictNotice } from "./PlayerNameConflictNotice"
 import { ResponsivePanel } from "@/components/layout/ResponsivePanel"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,7 +17,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import { useLeagueContext } from "@/components/league/LeagueContext"
 import { Input } from "@/components/ui/input"
 import { useCreatePlayer } from "@/hooks/use-create-player"
 import {
@@ -48,8 +47,6 @@ import {
   player_initial_rd,
   player_initial_rd_description,
   player_last_name,
-  player_name_conflict,
-  player_open_existing,
 } from "@/paraglide/messages.js"
 
 interface CreatePlayerPanelProps {
@@ -84,7 +81,6 @@ export function CreatePlayerPanel({
   description = player_create_description(),
   onCreated,
 }: CreatePlayerPanelProps) {
-  const league = useLeagueContext()
   const id = useId()
   const createPlayer = useCreatePlayer()
   const [draft, setDraft] = useState<NewPlayerDraft>(() =>
@@ -179,20 +175,7 @@ export function CreatePlayerPanel({
           </Field>
 
           {conflictingPlayerId ? (
-            <p role="alert" className="text-sm text-destructive">
-              {player_name_conflict()}{" "}
-              <Link
-                to="/o/$organizationSlug/l/$leagueId/player/$playerId"
-                params={{
-                  organizationSlug: league.organizationSlug,
-                  leagueId: league.id,
-                  playerId: conflictingPlayerId,
-                }}
-                className="font-medium underline underline-offset-4"
-              >
-                {player_open_existing()}
-              </Link>
-            </p>
+            <PlayerNameConflictNotice playerId={conflictingPlayerId} />
           ) : null}
 
           <Collapsible>
