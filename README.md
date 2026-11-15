@@ -13,7 +13,7 @@ don't repeat, enter the scores, and watch Glicko-2 ratings take care of themselv
 ![Built in Germany](https://shieldcn.dev/flag/de.svg?mode=light)
 ![Claude badge](https://shieldcn.dev/badge/Built%20with%20Claude.svg?variant=branded&brand=claude&mode=light)
 
-Hosted Instance: _coming soon_
+Hosted Instance: [roundnetarena.com](https://www.roundnetarena.com)
 
 </div>
 
