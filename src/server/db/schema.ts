@@ -264,6 +264,8 @@ export const ratingSnapshots = pgTable(
     rating: integer("rating").notNull(),
     rd: doublePrecision("rd").notNull(),
     vol: doublePrecision("vol").notNull(),
+    /** A manager's correction outside of a game; never the initial snapshot. */
+    manual: boolean("manual").notNull().default(false),
     createdAt: tstz("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -271,6 +273,10 @@ export const ratingSnapshots = pgTable(
       columns: [table.playerId, table.leagueId],
       foreignColumns: [players.id, players.leagueId],
     }),
+    check(
+      "snapshot_manual_without_game",
+      sql`not ${table.manual} or ${table.gameId} is null`
+    ),
     foreignKey({
       columns: [table.gameId, table.leagueId],
       foreignColumns: [games.id, games.leagueId],
@@ -278,7 +284,7 @@ export const ratingSnapshots = pgTable(
     unique("snapshot_player_game_uq").on(table.playerId, table.gameId),
     uniqueIndex("snapshot_initial_uq")
       .on(table.playerId)
-      .where(sql`${table.gameId} is null`),
+      .where(sql`${table.gameId} is null and not ${table.manual}`),
     index("snapshot_latest_idx").on(table.playerId, table.seq.desc()),
   ]
 )

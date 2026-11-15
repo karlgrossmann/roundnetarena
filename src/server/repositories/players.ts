@@ -166,6 +166,72 @@ export async function lockActivePlayer(
   return rows.length === 1
 }
 
+export async function updatePlayerName(
+  executor: Executor,
+  leagueId: string,
+  playerId: PlayerId,
+  firstName: string,
+  lastName: string
+): Promise<void> {
+  try {
+    await executor
+      .update(players)
+      .set({
+        firstName: normalizePlayerNamePart(firstName),
+        lastName: normalizePlayerNamePart(lastName),
+      })
+      .where(and(eq(players.id, playerId), eq(players.leagueId, leagueId)))
+  } catch (error) {
+    if (isPlayerNameConstraintViolation(error)) {
+      throw new PlayerNameConstraintError({ cause: error })
+    }
+    throw error
+  }
+}
+
+/** A manager's correction: becomes the current rating, history stays untouched. */
+export async function insertManualRating(
+  executor: Executor,
+  input: {
+    leagueId: string
+    playerId: PlayerId
+    rating: number
+    rd: number
+    vol: number
+  }
+): Promise<void> {
+  await executor.insert(ratingSnapshots).values({
+    id: createId("rating"),
+    ...input,
+    gameId: null,
+    manual: true,
+  })
+}
+
+/**
+ * A seat stores the rating it was drawn with, and the commit continues from that
+ * snapshot — a correction made in between would be overwritten silently.
+ */
+export async function isPlayerSeatedInOpenRound(
+  executor: Executor,
+  leagueId: string,
+  playerId: PlayerId
+): Promise<boolean> {
+  const result = await executor.execute(sql`
+    select exists (
+      select 1
+      from game_participation gp
+      inner join game g on g.game_id = gp.game_id
+      inner join game_block b on b.block_id = g.block_id
+      where gp.league_id = ${leagueId}
+        and gp.player_id = ${playerId}
+        and not b.committed
+    ) as seated
+  `)
+  const row = result.rows[0] as { seated: boolean } | undefined
+  return row?.seated ?? false
+}
+
 export async function findPlayerReferences(
   executor: Executor,
   leagueId: string,
@@ -479,7 +545,9 @@ async function findPlayers(
     inner join player_current_rating current using (player_id, league_id)
     inner join player_stats stats using (player_id, league_id)
     inner join rating_snapshot initial
-      on initial.player_id = p.player_id and initial.game_id is null
+      on initial.player_id = p.player_id
+        and initial.game_id is null
+        and not initial.manual
     where p.league_id = ${leagueId}
       and not p.marked_as_deleted
     order by current.rating desc, p.first_name, p.last_name

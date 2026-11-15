@@ -42,6 +42,7 @@ import { domain_public_view_rate_limited } from "@/paraglide/messages/domain_pub
 import { domain_public_view_unauthorized } from "@/paraglide/messages/domain_public_view_unauthorized.js"
 import { domain_public_view_unavailable } from "@/paraglide/messages/domain_public_view_unavailable.js"
 import { domain_player_not_found } from "@/paraglide/messages/domain_player_not_found.js"
+import { domain_player_rating_locked_in_round } from "@/paraglide/messages/domain_player_rating_locked_in_round.js"
 import { domain_pool_duplicate_fixed_team } from "@/paraglide/messages/domain_pool_duplicate_fixed_team.js"
 import { domain_pool_duplicate_player } from "@/paraglide/messages/domain_pool_duplicate_player.js"
 import { domain_pool_fixed_team_distinct_players } from "@/paraglide/messages/domain_pool_fixed_team_distinct_players.js"
@@ -233,6 +234,8 @@ export function translateDomainIssue(
       return domain_settings_not_found({}, options)
     case "player.not_found":
       return domain_player_not_found({}, options)
+    case "player.rating_locked_in_round":
+      return domain_player_rating_locked_in_round({}, options)
     case "round.active_exists":
       return domain_round_active_exists({}, options)
     case "round.too_few_players":

@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest"
 
+import { makePlayer } from "./fixtures"
 import {
+  draftFromPlayer,
   hasErrors,
   toCreatePlayerInput,
+  toUpdatePlayerInput,
   validateNewPlayer,
+  validatePlayerEdit,
 } from "./player-form"
 import type { NewPlayerDraft } from "./player-form"
 
@@ -76,5 +80,46 @@ describe("toCreatePlayerInput", () => {
 
   it("understands the comma the same way the validation does", () => {
     expect(toCreatePlayerInput(draft({ rd: "125,5" })).rd).toBe(125.5)
+  })
+})
+
+describe("player edit", () => {
+  const veteran = draftFromPlayer(makePlayer({ rating: 1631, rd: 24.6 }))
+
+  it("starts from the player as they are now", () => {
+    expect(veteran).toEqual({
+      firstName: "Klara",
+      lastName: "Nowak",
+      rating: "1631",
+      rd: "25",
+    })
+  })
+
+  it("does not reject an untouched RD below the enterable range", () => {
+    expect(
+      validatePlayerEdit({ ...veteran, firstName: "Clara" }, veteran)
+    ).toEqual({})
+  })
+
+  it("still checks numbers that were changed", () => {
+    const errors = validatePlayerEdit(
+      { ...veteran, rating: "50", rd: "20", lastName: " " },
+      veteran
+    )
+    expect(Object.keys(errors).sort()).toEqual(["lastName", "rating", "rd"])
+  })
+
+  it("sends only the numbers that were changed", () => {
+    expect(
+      toUpdatePlayerInput({ ...veteran, firstName: "Clara" }, veteran)
+    ).toEqual({ firstName: "Clara", lastName: "Nowak" })
+    expect(
+      toUpdatePlayerInput({ ...veteran, rating: "1700" }, veteran)
+    ).toEqual({ firstName: "Klara", lastName: "Nowak", rating: 1700 })
+    expect(toUpdatePlayerInput({ ...veteran, rd: "80,5" }, veteran)).toEqual({
+      firstName: "Klara",
+      lastName: "Nowak",
+      rd: 80.5,
+    })
   })
 })

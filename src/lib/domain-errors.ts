@@ -17,6 +17,7 @@ export const DOMAIN_ISSUE_CODES = [
   "player.rating_out_of_range",
   "player.rd_out_of_range",
   "player.not_found",
+  "player.rating_locked_in_round",
   "pool.duplicate_player",
   "pool.duplicate_fixed_team",
   "pool.fixed_team_distinct_players",

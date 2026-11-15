@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 
+import { EditPlayerButton } from "./EditPlayerButton"
 import { PlayerGamesCard } from "./PlayerGamesCard"
 import { PlayerHeader } from "./PlayerHeader"
 import { RatingHistoryCard } from "./RatingHistoryCard"
@@ -89,7 +90,11 @@ export function PlayerDetail({ playerId }: PlayerDetailProps) {
         onRetry={() => void games.refetch()}
       />
 
-      <RemovePlayerCard player={player} removal={removal} />
+      {/* Both actions are rare and sit restrained at the end of the page. */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start">
+        <EditPlayerButton player={player} />
+        <RemovePlayerCard player={player} removal={removal} />
+      </div>
     </div>
   )
 }

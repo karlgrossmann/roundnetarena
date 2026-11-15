@@ -17,6 +17,7 @@ import {
 import { getDb } from "../db/client"
 import { createPlayerForLeague } from "./create-player.server"
 import { deletePlayerForLeague } from "./delete-player.server"
+import { updatePlayerForLeague } from "./update-player.server"
 
 const PlayerNamePartSchema = z
   .string()
@@ -37,6 +38,12 @@ const CreatePlayerSchema = OrganizationLeagueSchema.extend({
     .max(INITIAL_RD_MAX, "player.rd_out_of_range"),
 })
 
+const UpdatePlayerSchema = CreatePlayerSchema.extend({
+  playerId: z.string().min(1),
+  rating: CreatePlayerSchema.shape.rating.optional(),
+  rd: CreatePlayerSchema.shape.rd.optional(),
+})
+
 const DeletePlayerSchema = OrganizationLeagueSchema.extend({
   playerId: z.string().min(1),
 })
@@ -52,6 +59,19 @@ export const createPlayer = createServerFn({ method: "POST" })
       permission: "play:manage",
     })
     return createPlayerForLeague(data)
+  })
+
+export const updatePlayer = createServerFn({ method: "POST" })
+  .middleware([authed])
+  .validator(UpdatePlayerSchema)
+  .handler(async ({ context, data }) => {
+    await requireLeagueAccess(getDb(), {
+      organizationId: data.organizationId,
+      leagueId: data.leagueId,
+      userId: context.auth.user.id,
+      permission: "play:manage",
+    })
+    return updatePlayerForLeague(data)
   })
 
 export const deletePlayer = createServerFn({ method: "POST" })
